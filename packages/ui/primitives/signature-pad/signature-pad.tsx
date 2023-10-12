@@ -34,6 +34,7 @@ export const SignaturePad = ({
 
   const [isPressed, setIsPressed] = useState(false);
   const [points, setPoints] = useState<Point[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
 
   const perfectFreehandOptions = useMemo(() => {
     const size = $el.current ? Math.min($el.current.height, $el.current.width) * 0.03 : 10;
@@ -150,7 +151,10 @@ export const SignaturePad = ({
         ctx.save();
       }
 
-      onChange?.($el.current.toDataURL());
+      const dataURL = $el.current.toDataURL();
+
+      onChange?.(dataURL);
+      setHistory((prev) => [...prev, dataURL]);
     }
 
     setPoints([]);
@@ -184,6 +188,16 @@ export const SignaturePad = ({
     onChange?.(null);
 
     setPoints([]);
+  };
+
+  const onUndoClick = () => {
+    const newHistory = [...history];
+    newHistory.pop();
+    setHistory(newHistory);
+
+    const undoDataURL = newHistory[newHistory.length - 1] ?? defaultValue;
+
+    onChange?.(undoDataURL);
   };
 
   useEffect(() => {
@@ -223,7 +237,16 @@ export const SignaturePad = ({
         {...props}
       />
 
-      <div className="absolute bottom-4 right-4">
+      <div className="absolute bottom-4 right-4 space-x-2">
+        {Boolean(history.length) && (
+          <button
+            type="button"
+            className="focus-visible:ring-ring ring-offset-background rounded-full p-0 text-xs text-slate-500 focus-visible:outline-none focus-visible:ring-2"
+            onClick={() => onUndoClick()}
+          >
+            Undo
+          </button>
+        )}
         <button
           type="button"
           className="focus-visible:ring-ring ring-offset-background rounded-full p-0 text-xs text-slate-500 focus-visible:outline-none focus-visible:ring-2"
